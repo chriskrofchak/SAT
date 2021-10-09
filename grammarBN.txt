@@ -1,0 +1,5 @@
+S    ::= BOF expr EOF
+expr ::= term | term AND expr
+term ::= pred | ( disj ) 
+disj ::= pred | pred OR disj 
+pred ::= NOT LIT | LIT

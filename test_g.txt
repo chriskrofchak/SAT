@@ -1,0 +1,3 @@
+S ::= B c | D B
+B ::= a b | c S 
+D ::= d | eps 

@@ -1,0 +1,4 @@
+expr EOF
+term AND EOF
+disj )
+pred AND ) OR EOF

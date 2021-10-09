@@ -1,0 +1,49 @@
+0 BOF shift 1
+
+1 expr shift 2
+1 term shift 3
+1 pred shift 4
+1 LPAREN shift 5
+1 NOT shift 7
+1 LIT shift 6
+
+2 EOF shift 9
+
+3 AND shift 10 
+3 EOF reduce 1
+
+4 { AND EOF } reduce 3
+
+5 disj shift 14
+5 pred shift 11
+5 NOT shift 7
+5 LIT shift 6
+
+6 { AND RPAREN OR EOF } reduce 8
+
+7 LIT shift 8
+
+8 { AND RPAREN OR EOF } reduce 7
+
+10 expr shift 13
+10 term shift 3
+10 pred shift 4
+10 LPAREN shift 5
+10 NOT shift 7
+10 LIT shift 6
+
+11 RPAREN reduce 5
+11 OR shift 12
+
+12 disj shift 16
+12 pred shift 11
+12 NOT shift 7
+12 LIT shift 6
+
+13 EOF reduce 2
+
+14 RPAREN shift 15
+
+15 { AND EOF } reduce 4
+
+16 RPAREN reduce 6

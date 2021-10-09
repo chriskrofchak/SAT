@@ -1,0 +1,9 @@
+S     BOF expr EOF
+expr  term
+expr  term AND expr
+term  pred
+term  LPAREN disj RPAREN
+disj  pred 
+disj  pred OR disj 
+pred  NOT LIT
+pred  LIT
