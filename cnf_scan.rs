@@ -69,6 +69,11 @@ fn to_type(state: &State) -> Type {
         State::AND        => Type::AND,
         State::OR         => Type::OR,
         State::NOT        => Type::NOT, 
+        State::AA         => Type::LIT, // the on-the-way states to AND          
+        State::AN         => Type::LIT, // the on-the-way states to AND 
+        State::OO         => Type::LIT, // the on-the-way states to OR 
+        State::NN         => Type::LIT, // the on-the-way states to NOT 
+        State::NO         => Type::LIT, // the on-the-way states to NOT 
         State::LIT        => Type::LIT,
         State::WHITESPACE => Type::WHITESPACE,
         _                 => Type::FAIL,
@@ -93,7 +98,7 @@ fn simpl_max_munch( tokens: &mut Vec<Token>,
                         tokens.push( Token(t, to_type(&s)) );
                     } else {
                         t.push(c);
-                        panic!("Failed on input {}", t);
+                        panic!("Scan failed on input '{}'", t);
                     }
                     t = String::new();
                     s = State::START;
@@ -117,8 +122,13 @@ pub fn scan(input: &String) -> Vec<Token> {
     let accept: Vec<State> = vec![ 
         State::LPAREN,
         State::RPAREN,
+        State::AA,
+        State::AN,
         State::AND,
+        State::OO,
         State::OR,
+        State::NN,
+        State::NO,
         State::NOT,
         State::WHITESPACE,
         State::LIT

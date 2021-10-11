@@ -20,16 +20,16 @@ struct ReducePair(bool, usize);
 // Rule is non leaf node which can have many children
 // Term is a terminal. 
 #[derive(Debug, Clone)]
-enum ParseVal {
+pub enum ParseVal {
     Rule(Vec<String>),
     Term(Token)
 }
 
 // node can have many children! 
 #[derive(Clone)]
-pub struct ParseNode(ParseVal, Vec<ParseNode>);
+pub struct ParseNode(pub ParseVal, pub Vec<ParseNode>);
 
-fn get_token(node: &ParseNode) -> String {
+pub fn get_token(node: &ParseNode) -> String {
     match &node.0 {
         Rule(vec) => vec[0].clone(),
         Term(tok) => tok.0.clone()
@@ -54,7 +54,8 @@ impl fmt::Display for ParseVal {
 
 
 // will have to implement tree traversal on ParseNode
-pub fn inorder_helper(node: &ParseNode, s: i16) {
+
+fn inorder_helper(node: &ParseNode, s: i16) {
     for _ in 0..s {
         print!(" ");
     }
@@ -64,10 +65,11 @@ pub fn inorder_helper(node: &ParseNode, s: i16) {
     }
 }
 
+#[allow(dead_code)]
 pub fn inorder(node: &ParseNode) {
     inorder_helper(node, 0);
 }
-
+// */
 
 ///////////////////// FILE I/O
 
