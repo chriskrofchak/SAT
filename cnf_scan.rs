@@ -1,10 +1,12 @@
+use DfaInput::*;
+
 #[derive(Clone, Debug, PartialEq, strum_macros::Display)]
 pub enum Type {
     LPAREN,
     RPAREN,
     AND,
-    OR,
     NOT,
+    OR,
     LIT,
     WHITESPACE,
     BOF,
@@ -21,8 +23,11 @@ pub enum State {
     LPAREN,
     RPAREN,
     AND,
+    ANDC,
     OR,
+    ORC,
     NOT,
+    NOTC,
     LIT,
     AA,
     AN,
@@ -33,33 +38,30 @@ pub enum State {
     FAIL
 }
 
-pub struct Transition(State,char,State);
-
-fn exists_transition(trans_vec: &Vec<Transition>, q: &State, e: &char) -> State {
-    for Transition(s, c, next_state) in trans_vec.iter() {
-        if *s == *q && *c == *e {
-            return *next_state;
-        }
-    }
-    State::FAIL
+enum DfaInput {
+    CharIn(char),
+    PredIn(Box<dyn Fn(char) -> bool>)
 }
 
+pub struct Transition(State,DfaInput,State);
+
 fn delta(trans_vec: &Vec<Transition>, q: &State, e: &char) -> State {
-    let next_state: State = exists_transition(trans_vec, q, e);
-    if !(next_state == State::FAIL) {
-        return next_state;
+    for Transition(s, dfa_in, next_state) in trans_vec.iter() {
+        if *s == *q {
+            match dfa_in {
+                CharIn(c) => {
+                    if *c == *e {
+                        return *next_state;
+                    }
+                },
+                PredIn(pred) => {
+                    if pred(*e) {
+                        return *next_state;
+                    }
+                }
+            }
+        }
     }
-    else if *q != State::LPAREN 
-            && *q != State::RPAREN 
-            && *q != State::WHITESPACE 
-            && *q != State::NOT
-            && e.is_alphabetic()
-    {
-        return State::LIT;
-    } else if (*q == State::START || *q == State::WHITESPACE) && e.is_whitespace() {
-        return State::WHITESPACE;
-    }
-    // else return FAIL.
     State::FAIL
 }
 
@@ -70,6 +72,9 @@ fn to_type(state: &State) -> Type {
         State::AND        => Type::AND,
         State::OR         => Type::OR,
         State::NOT        => Type::NOT, 
+        State::ANDC       => Type::AND,
+        State::ORC        => Type::OR,
+        State::NOTC       => Type::NOT, 
         State::AA         => Type::LIT, // the on-the-way states to AND          
         State::AN         => Type::LIT, // the on-the-way states to AND 
         State::OO         => Type::LIT, // the on-the-way states to OR 
@@ -126,35 +131,60 @@ pub fn scan(input: &String) -> Vec<Token> {
         State::AA,
         State::AN,
         State::AND,
+        State::ANDC,
         State::OO,
         State::OR,
+        State::ORC,
         State::NN,
         State::NO,
         State::NOT,
+        State::NOTC,
         State::WHITESPACE,
         State::LIT
     ];
 
-    let trans_vec: Vec<Transition> = vec![
+    let mut trans_vec: Vec<Transition> = vec![
         // from start
-        Transition(State::START, '(', State::LPAREN),
-        Transition(State::START, ')', State::RPAREN),
+        Transition(State::START, CharIn('('), State::LPAREN),
+        Transition(State::START, CharIn(')'), State::RPAREN),
         // symbols and or not
-        Transition(State::START, '|', State::OR),
-        Transition(State::START, '&', State::AND),
-        Transition(State::START, '!', State::NOT),
+        Transition(State::START, CharIn('|'), State::ORC),
+        Transition(State::START, CharIn('&'), State::ANDC),
+        Transition(State::START, CharIn('!'), State::NOTC),
         // AND
-        Transition(State::START, 'a', State::AA),
-        Transition(State::AA,    'n', State::AN),
-        Transition(State::AN,    'd', State::AND),
+        Transition(State::START, CharIn('a'), State::AA),
+        Transition(State::AA,    CharIn('n'), State::AN),
+        Transition(State::AN,    CharIn('d'), State::AND),
         // NOT
-        Transition(State::START, 'n', State::NN),
-        Transition(State::NN,    'o', State::NO),
-        Transition(State::NO,    't', State::NOT),
+        Transition(State::START, CharIn('n'), State::NN),
+        Transition(State::NN,    CharIn('o'), State::NO),
+        Transition(State::NO,    CharIn('t'), State::NOT),
         // OR
-        Transition(State::START, 'o', State::OO),
-        Transition(State::OO,    'r', State::OR)
+        Transition(State::START, CharIn('o'), State::OO),
+        Transition(State::OO,    CharIn('r'), State::OR),
+        // whitespace
+        Transition(State::START, PredIn(Box::new(|x| x.is_whitespace())), State::WHITESPACE),
+        Transition(State::WHITESPACE, PredIn(Box::new(|x| x.is_whitespace())), State::WHITESPACE)
     ];
+
+    let to_lit: Vec<State> = vec![
+        State::START, 
+        State::AA, 
+        State::AN, 
+        State::AND, 
+        State::NN, 
+        State::NO,
+        State::NOT,
+        State::OO,
+        State::OR,
+        State::LIT
+    ];
+
+    for item in to_lit.iter() {
+        trans_vec.push(
+            Transition(*item, PredIn(Box::new(|x| x.is_alphanumeric())), State::LIT)
+        );
+    }
 
     // let temp: String = String::new();
     // let first_parse: Vec<Vec<Token>> = Vec::new();

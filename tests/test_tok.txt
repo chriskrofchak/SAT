@@ -1,0 +1,1 @@
+p and q and s &t and !v and (u|s|v)

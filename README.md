@@ -4,9 +4,31 @@ It's a bit of a misnomer to call it my own since I didn't invent anything but I 
 
 The crux of it is that I implemented an SLR parser (thank you to [CS444/CS241 course notes](https://student.cs.uwaterloo.ca/~cs444/parse.pdf) for reference) to take input and make an abstract syntax tree (AST) which I then traverse using either DPLL or CDCL. There are command line arguments to choose which. The DPLL algorithm I followed using the [Wikipedia pseudocode](https://en.wikipedia.org/wiki/DPLL_algorithm#The_algorithm) and the CDCL algorithm is from the published [MiniSAT paper](http://minisat.se/downloads/MiniSat.pdf) on the very heuristic. I go through the topics more in depth below.
 
+## CLI 
+
+Can run the program if you clone this and are in the directory simply with 
+
+```cargo run -- [flags]```
+
+That extra `--` with a space after is important for `cargo run`. Then the flags I have are as follows:
+
+Flag       | Meaning
+---------- | ----------------- 
+`--tok`    | Prints input as stream of Tokens
+`--deriv`  | Prints inorder traversal of the parse tree (leftmost derivation)
+`--ast`    | Will print the unsimplified AST (still arbitrarily nested)
+`--simpl`  | Will print the simplified/flattened AST
+`--nores`  | Will not print "SAT" or "UNSAT"
+`--nobv`   | Will not print the boolean valuations of literals
+`--cdcl`   | Will use CDCL solver instead of DPLL. DPLL is default.
+
+So, by default the result and boolean valuations will print. The rest are flags for debugging, or 
+for whatever output you want if you use this for another tool...
+
+
 ## Scanner
 
-So this at least I did completely on my own. We learned about DFAs and Simplified Maximal Munch in CS241, and so I made a simple DFA which accepts `and`, `or`, `not`, `!`, `|`, and `&` as keywords, I think you know what for. You can use them interchangeably as well, so `p and q & not s and !t` will tokenize as expected. Also, if you continue typing characters not separated by whitespace the keyword (not the symbols though) will turn into a literal. So `andine & notabene` does not tokenize as `AND LIT AND NOT LIT` but simply as `LIT AND LIT`.
+So this at least I did completely on my own. We learned about DFAs and Simplified Maximal Munch in CS241, and so I made a simple DFA which accepts `and`, `or`, `not`, `!`, `|`, and `&` as keywords, I think you know what for. You can use them interchangeably as well, so `p and q & not s and !t` will tokenize as expected. Also, if you continue typing characters not separated by whitespace the keyword (not the symbols though) will turn into a literal. So `andine & notabene` does not tokenize as `AND LIT AND NOT LIT` but simply as `LIT AND LIT`. Also literals can be numbers which I don't advise because that's so confusing but I have the closure `|x| x.is_alphanumeric()` in Rust as the decider to shift to `State::LIT`, so go ham!
 
 ## Parser 
 
