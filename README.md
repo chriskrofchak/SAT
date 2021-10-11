@@ -26,10 +26,10 @@ Then, the SLR Automaton for the above grammar is as follows. I numbered the stat
 
 ![](/Flowchart.jpeg)
 
-I then used the LR1 DFA format as described on the [CS241 course page](https://student.cs.uwaterloo.ca/~cs241/parsing/lr1.html) as I think it is an efficient way to write out the DFA. This is normally a shift reduce table but the format once the file read is as follows:
+The grey states are accepting states (reduce) and then the bolded lines in non grey states are when we should reduce. Luckily we have no shift reduce conflicts and so we can easily parse using SLR. I used the LR1 DFA format as described on the [CS241 course page](https://student.cs.uwaterloo.ca/~cs241/parsing/lr1.html) as I think it is an efficient way to write out the DFA. This is normally a shift reduce table but the format once the file read is as follows:
 
 ```Rust
-Vec<HashMap<String, (bool, usize)>>
+Vec<std::collections::HashMap<String, (bool, usize)>>.
 ```
 
 It converts the DFA into a vector of maps which use characters as keys. So we check to ensure we never exceed the size of the vector, but the input state is how we index the vector. Then we retrieve a pair of `bool` and `usize` which correspond with whether to reduce and either the state to shift to or the rule to reduce by. 
@@ -37,6 +37,40 @@ It converts the DFA into a vector of maps which use characters as keys. So we ch
 I was going to write a DFA table generator as well but that's a bit too much to chew right now. The reason I didn't use lex or yacc for this project is given I wanted to learn Rust / improve my Rust skills and lex and yacc produce C code. Next time I will do something in C, I want to familiarize myself with parser generator tools like Bison...
 
 ## Making the AST 
+
+Most of this is hardcoded unfortunately, I have a vector which contains each rule and a "decision". 
+I love `enum`s in `Rust` and so I use
+
+```Rust
+enum Decision {
+    Recur,
+    AND,
+    OR,
+    Term
+}
+
+enum Connective {
+    And(Vec<Connective>),
+    Or(Vec<Connective>),
+    Literal(bool, String)
+}
+```
+
+then depending on the rule I convert the AST of rules and tokens, into an `And(_)` variant of `Connective` and recur, or an `Or(_)` or it terminates at `Literal(_,_)` and depending on the rule sets the boolean to true and returns the lexeme of the token to `String`.
+
+This will result in a nested list for conjuncts and disjuncts of length greater than two, since something like `a and b and c` will parse to `And([a, And([b, c])])`. So we have to then simplify the tree so that we flatten any nesting of the same type. Finally for an input like 
+
+```
+p and q and r and s and (a or b or c)
+```
+
+we return a `Connective` as follows
+
+```
+And([p, q, r, s, Or([a, b, c])]).
+```
+
+This is much easier to pass to DPLL/CDCL for satisfiability checking.
 
 ## DPLL 
 
