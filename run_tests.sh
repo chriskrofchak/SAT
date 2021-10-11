@@ -1,6 +1,5 @@
 #!/bin/bash
 
-for filename in ./tests/* do
-    cat filename | cargo run
-    echo '\n'
+for FILE in ./tests/*; do
+    cat $FILE | cargo run;
 done

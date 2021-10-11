@@ -52,6 +52,7 @@ fn delta(trans_vec: &Vec<Transition>, q: &State, e: &char) -> State {
     else if *q != State::LPAREN 
             && *q != State::RPAREN 
             && *q != State::WHITESPACE 
+            && *q != State::NOT
             && e.is_alphabetic()
     {
         return State::LIT;

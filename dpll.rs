@@ -71,9 +71,16 @@ fn dpll_helper(conn: &Connective, in_map: &HashMap<String, Bv>) -> (Res, HashMap
         }
 
         // UNIT PROPAGATION
+        // check for literal conflicts!
         for item in vec.iter() {
             match item {
-                Literal(_,_) => {
+                Literal(is_not,lex) => {
+                    if !und_literal(item, &map) {
+                        if (*map.get(lex).unwrap() == Bv::TRUE && *is_not)
+                         || (*map.get(lex).unwrap() == Bv::FALSE && !*is_not) { 
+                                return (Res::UNSAT, map);
+                        }
+                    }
                     set_literal(item, &mut map);
                 },
                 And(inn_vec) | Or(inn_vec) => {
