@@ -2,7 +2,7 @@
 
 It's a bit of a misnomer to call it my own since I didn't invent anything but I do like the ring of CK-\[ ... \], so forgive the name. 
 
-The crux of it is that I implemented an SLR parser (thank you to CS241 course notes for reference) to take input and make an abstract syntax tree (AST) which I then traverse using either DPLL or CDCL. There are command line arguments to choose which. The DPLL algorithm I followed using the [Wikipedia pseudocode](https://en.wikipedia.org/wiki/DPLL_algorithm#The_algorithm) and the CDCL algorithm is from the published [MiniSAT paper](http://minisat.se/downloads/MiniSat.pdf) on the very heuristic. I go through the topics more in depth below.
+The crux of it is that I implemented an SLR parser (thank you to [CS444/CS241 course notes](https://student.cs.uwaterloo.ca/~cs444/parse.pdf) for reference) to take input and make an abstract syntax tree (AST) which I then traverse using either DPLL or CDCL. There are command line arguments to choose which. The DPLL algorithm I followed using the [Wikipedia pseudocode](https://en.wikipedia.org/wiki/DPLL_algorithm#The_algorithm) and the CDCL algorithm is from the published [MiniSAT paper](http://minisat.se/downloads/MiniSat.pdf) on the very heuristic. I go through the topics more in depth below.
 
 ## Scanner
 
@@ -14,7 +14,13 @@ The grammar is a very simple one since conjunctive normal form (CNF) has stricte
 
 This is the grammar.
 
-```auxiliary/grammarBN.txt```
+```
+S    ::= BOF expr EOF
+expr ::= term | term AND expr
+term ::= pred | ( disj ) 
+disj ::= pred | pred OR disj 
+pred ::= NOT LIT | LIT
+```
 
 Then, the SLR Automaton for the above grammar is as follows. I numbered the states when I drew out the automaton by hand but I didn't add the numbers here. 
 
@@ -22,7 +28,9 @@ Then, the SLR Automaton for the above grammar is as follows. I numbered the stat
 
 I then used the LR1 DFA format as described on the [CS241 course page](https://student.cs.uwaterloo.ca/~cs241/parsing/lr1.html) as I think it is an efficient way to write out the DFA. This is normally a shift reduce table but the format once the file read is as follows:
 
-```Rust:Vec<HashMap<String, (bool, usize)>>```
+```Rust
+Vec<HashMap<String, (bool, usize)>>
+```
 
 It converts the DFA into a vector of maps which use characters as keys. So we check to ensure we never exceed the size of the vector, but the input state is how we index the vector. Then we retrieve a pair of `bool` and `usize` which correspond with whether to reduce and either the state to shift to or the rule to reduce by. 
 
