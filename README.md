@@ -96,4 +96,6 @@ This is much easier to pass to DPLL/CDCL for satisfiability checking.
 
 ## DPLL 
 
+DPLL is as the pseudocode describes. The runtime is eye watering since DPLL is O(2^n) and there are a lot of O(n) passes through children and predicates while doing unit propagation and such. This has chronological back tracking which is standard with vanilla DPLL and I note that I have no heuristics for branching in this implementation, I loop through a `HashMap` which contains keys and an enum with `UND, TRUE, FALSE` where it's either a boolean valuation or undecided. I pick the first undecided literal and branch on that. This is for determinism, so every time it's run it should be the same every time. Of course, this is not guaranteed given `HashMap` doesn't guarantee same ordering when iterating through elements at least as far as I know.
+
 ## CDCL 
