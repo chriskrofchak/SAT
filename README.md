@@ -24,7 +24,7 @@ pred ::= NOT LIT | LIT
 
 Then, the SLR Automaton for the above grammar is as follows. I numbered the states when I drew out the automaton by hand but I didn't add the numbers here. 
 
-![](/Flowchart.pdf)
+![](/Flowchart.jpeg)
 
 I then used the LR1 DFA format as described on the [CS241 course page](https://student.cs.uwaterloo.ca/~cs241/parsing/lr1.html) as I think it is an efficient way to write out the DFA. This is normally a shift reduce table but the format once the file read is as follows:
 
