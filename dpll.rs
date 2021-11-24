@@ -6,13 +6,13 @@ use crate::connective::Connective::{self, *};
 pub enum Bv {
     UND,
     TRUE,
-    FALSE
+    FALSE,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Res {
     SAT,
-    UNSAT
+    UNSAT,
 }
 
 #[allow(dead_code)]
@@ -24,19 +24,17 @@ fn unset_literal(conn: &Connective, map: &mut HashMap<String, Bv>) {
 
 fn set_literal(conn: &Connective, map: &mut HashMap<String, Bv>) {
     if let Literal(is_not, lex) = conn {
-        let bv: Bv = if *is_not {
-            Bv::FALSE
-        } else {
-            Bv::TRUE
-        };
+        let bv: Bv = if *is_not { Bv::FALSE } else { Bv::TRUE };
         map.insert(lex.clone(), bv);
     }
 }
 
 fn eval_literal(conn: &Connective, map: &HashMap<String, Bv>) -> bool {
     match conn {
-        Literal(is_not, lex) => ( ((!*is_not) && (*map.get(lex).unwrap() == Bv::TRUE)) ||
-                                  (  *is_not  && (*map.get(lex).unwrap() == Bv::FALSE)) ),
+        Literal(is_not, lex) => {
+            (((!*is_not) && (*map.get(lex).unwrap() == Bv::TRUE))
+                || (*is_not && (*map.get(lex).unwrap() == Bv::FALSE)))
+        }
         _ => false, // since Ors and Ands (not literals/atoms we will say do not eval to true)
     }
 }
@@ -49,14 +47,10 @@ fn und_literal(conn: &Connective, map: &HashMap<String, Bv>) -> bool {
 }
 
 #[allow(dead_code)]
-fn unit_propagation() {
-
-}
+fn unit_propagation() {}
 
 #[allow(dead_code)]
-fn pure_literal_elimination() {
-
-}
+fn pure_literal_elimination() {}
 
 fn dpll_helper(conn: &Connective, in_map: &HashMap<String, Bv>) -> (Res, HashMap<String, Bv>) {
     let curr_conn = conn.clone();
@@ -64,8 +58,7 @@ fn dpll_helper(conn: &Connective, in_map: &HashMap<String, Bv>) -> (Res, HashMap
     let mut fin_conn: Option<Connective> = None;
 
     if let And(mut vec) = curr_conn {
-
-        // empty is good --> satisfiable! 
+        // empty is good --> satisfiable!
         if vec.is_empty() {
             return (Res::SAT, map);
         }
@@ -74,15 +67,16 @@ fn dpll_helper(conn: &Connective, in_map: &HashMap<String, Bv>) -> (Res, HashMap
         // check for literal conflicts!
         for item in vec.iter() {
             match item {
-                Literal(is_not,lex) => {
+                Literal(is_not, lex) => {
                     if !und_literal(item, &map) {
                         if (*map.get(lex).unwrap() == Bv::TRUE && *is_not)
-                         || (*map.get(lex).unwrap() == Bv::FALSE && !*is_not) { 
-                                return (Res::UNSAT, map);
+                            || (*map.get(lex).unwrap() == Bv::FALSE && !*is_not)
+                        {
+                            return (Res::UNSAT, map);
                         }
                     }
                     set_literal(item, &mut map);
-                },
+                }
                 And(inn_vec) | Or(inn_vec) => {
                     if inn_vec.len() == 1 {
                         set_literal(&inn_vec[0], &mut map);
@@ -94,7 +88,7 @@ fn dpll_helper(conn: &Connective, in_map: &HashMap<String, Bv>) -> (Res, HashMap
         // filter out everything!.
         vec.retain(|x| {
             match x {
-                Literal(_,_) => false,
+                Literal(_, _) => false,
                 Or(inn_vec) => {
                     for item in inn_vec.iter() {
                         if eval_literal(item, &map) {
@@ -102,7 +96,7 @@ fn dpll_helper(conn: &Connective, in_map: &HashMap<String, Bv>) -> (Res, HashMap
                         }
                     }
                     true
-                },
+                }
                 And(_) => false, // shouldn't happen... get rid of it tho!
             }
         });
@@ -140,7 +134,7 @@ fn dpll_helper(conn: &Connective, in_map: &HashMap<String, Bv>) -> (Res, HashMap
                             }
                         }
                     }
-                },
+                }
                 Literal(is_not, lex) => {
                     if pure_lit.contains_key(lex) {
                         if *pure_lit.get(lex).unwrap() != *is_not {
@@ -159,12 +153,12 @@ fn dpll_helper(conn: &Connective, in_map: &HashMap<String, Bv>) -> (Res, HashMap
         }
 
         // remove top level literals
-        vec.retain(|x| 
-            matches!(x, Literal(_,lex) if !pure_lit.contains_key(lex)) || 
-            matches!(x, Or(vec) if !vec.iter().any( 
-                |y| matches!(y, Literal(_,lex) if pure_lit.contains_key(lex)) 
-            ))
-        );
+        vec.retain(|x| {
+            matches!(x, Literal(_,lex) if !pure_lit.contains_key(lex))
+                || matches!(x, Or(vec) if !vec.iter().any(
+                    |y| matches!(y, Literal(_,lex) if pure_lit.contains_key(lex))
+                ))
+        });
 
         // exit at any time if we have completed all clauses
         if vec.is_empty() {
@@ -183,7 +177,7 @@ fn dpll_helper(conn: &Connective, in_map: &HashMap<String, Bv>) -> (Res, HashMap
         fin_conn = Some(And(vec));
     }
 
-    // ELSE. choose a literal. recur. 
+    // ELSE. choose a literal. recur.
     // if that is unsat try with (not lit)
     let mut next_lit: Option<String> = None;
     for item in map.keys() {
@@ -196,7 +190,7 @@ fn dpll_helper(conn: &Connective, in_map: &HashMap<String, Bv>) -> (Res, HashMap
     // there is no more undecided variables...
     if let None = next_lit {
         return (Res::SAT, map);
-    } // else 
+    } // else
 
     let lit_str = next_lit.unwrap();
     let mut final_conn = fin_conn.unwrap();
@@ -207,7 +201,7 @@ fn dpll_helper(conn: &Connective, in_map: &HashMap<String, Bv>) -> (Res, HashMap
     if res.0 == Res::SAT {
         return res;
     } // else
-    
+
     // try with not false.
     final_conn.remove(&Literal(false, lit_str.clone()));
     final_conn.add(&Literal(true, lit_str.clone()));
@@ -220,8 +214,10 @@ fn add_literals(conn: &Connective, map: &mut HashMap<String, Bv>) {
             for item in vec.iter() {
                 add_literals(item, map);
             }
-        },
-        Literal(_,lex) => { map.insert(lex.clone(), Bv::UND); }
+        }
+        Literal(_, lex) => {
+            map.insert(lex.clone(), Bv::UND);
+        }
     }
 }
 
@@ -235,9 +231,9 @@ pub fn dpll(conn: &Connective) -> (Res, HashMap<String, Bv>) {
                 set_literal(&vec[0], &mut map);
             }
             (Res::SAT, map)
-        },
-        Literal(_,_) => { 
-            set_literal(conn, &mut map); 
+        }
+        Literal(_, _) => {
+            set_literal(conn, &mut map);
             (Res::SAT, map)
         }
     }

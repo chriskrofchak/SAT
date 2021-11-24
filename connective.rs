@@ -4,16 +4,18 @@ use Connective::*;
 pub enum Connective {
     And(Vec<Connective>),
     Or(Vec<Connective>),
-    Literal(bool, String) // NOTs will be handled this way
+    Literal(bool, String), // NOTs will be handled this way
 }
 
 // don't NEED to use it yet... so we allow dead code
 #[allow(dead_code)]
 impl Connective {
-    // add clause 
+    // add clause
     pub fn add(&mut self, item: &Connective) {
         match self {
-            And(vec) | Or(vec) => {vec.push(item.clone()); },
+            And(vec) | Or(vec) => {
+                vec.push(item.clone());
+            }
             _ => {}
         }
     }
@@ -22,7 +24,7 @@ impl Connective {
     pub fn empty(&self) -> bool {
         match self {
             And(vec) | Or(vec) => vec.is_empty(),
-            Literal(_,_)       => false,
+            Literal(_, _) => false,
         }
     }
 
@@ -34,8 +36,8 @@ impl Connective {
                 if let Some(index) = vec.iter().position(|x| *x == *pred) {
                     vec.remove(index);
                 }
-            },
-            Literal(_,_) => {}
+            }
+            Literal(_, _) => {}
         }
     }
 }
@@ -57,25 +59,18 @@ impl PartialEq for Connective {
     fn eq(&self, other: &Self) -> bool {
         match self {
             // individual arms unavoidable...
-            And(vec) => {
-                match other {
-                    And(rhs_vec) => conn_vec_eq(vec, rhs_vec),
-                    _ => false,
-                }
+            And(vec) => match other {
+                And(rhs_vec) => conn_vec_eq(vec, rhs_vec),
+                _ => false,
             },
-            Or(vec) => {
-                match other {
-                    Or(rhs_vec) => conn_vec_eq(vec, rhs_vec),
-                    _ => false
-                }
+            Or(vec) => match other {
+                Or(rhs_vec) => conn_vec_eq(vec, rhs_vec),
+                _ => false,
             },
-            Literal(is_not, lex) => {
-                match other {
-                    Literal(rhs_not, rhs_lex) => ((is_not == rhs_not) 
-                                                  && (lex == rhs_lex)),
-                    _ => false
-                }
-            }
+            Literal(is_not, lex) => match other {
+                Literal(rhs_not, rhs_lex) => ((is_not == rhs_not) && (lex == rhs_lex)),
+                _ => false,
+            },
         }
     }
 
@@ -84,29 +79,32 @@ impl PartialEq for Connective {
     }
 }
 
-
 fn ast_print_helper(node: &Connective, s: u16) {
     for _ in 0..s {
         print!(" ");
     }
     match node {
         // to prevent repeated code
-        And(vec) | Or(vec) => { 
+        And(vec) | Or(vec) => {
             // to print appropriately
             match node {
-                And(_) => {println!("And(");},
-                Or(_) => {println!("Or(");},
+                And(_) => {
+                    println!("And(");
+                }
+                Or(_) => {
+                    println!("Or(");
+                }
                 _ => {}
             }
             // then rest printing
             for child in vec.iter() {
-                ast_print_helper(child, s+2);
+                ast_print_helper(child, s + 2);
             }
             for _ in 0..s {
                 print!(" ");
             }
             println!(")");
-        },
+        }
         Connective::Literal(is_not, lit) => {
             if *is_not {
                 print!("NOT ");

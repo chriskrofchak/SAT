@@ -11,7 +11,7 @@ pub enum Type {
     WHITESPACE,
     BOF,
     EOF,
-    FAIL // will never happen...
+    FAIL, // will never happen...
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -35,15 +35,15 @@ pub enum State {
     NO,
     OO,
     WHITESPACE,
-    FAIL
+    FAIL,
 }
 
 enum DfaInput {
     CharIn(char),
-    PredIn(Box<dyn Fn(char) -> bool>)
+    PredIn(Box<dyn Fn(char) -> bool>),
 }
 
-pub struct Transition(State,DfaInput,State);
+pub struct Transition(State, DfaInput, State);
 
 fn delta(trans_vec: &Vec<Transition>, q: &State, e: &char) -> State {
     for Transition(s, dfa_in, next_state) in trans_vec.iter() {
@@ -53,7 +53,7 @@ fn delta(trans_vec: &Vec<Transition>, q: &State, e: &char) -> State {
                     if *c == *e {
                         return *next_state;
                     }
-                },
+                }
                 PredIn(pred) => {
                     if pred(*e) {
                         return *next_state;
@@ -67,30 +67,32 @@ fn delta(trans_vec: &Vec<Transition>, q: &State, e: &char) -> State {
 
 fn to_type(state: &State) -> Type {
     match state {
-        State::LPAREN     => Type::LPAREN,
-        State::RPAREN     => Type::RPAREN,
-        State::AND        => Type::AND,
-        State::OR         => Type::OR,
-        State::NOT        => Type::NOT, 
-        State::ANDC       => Type::AND,
-        State::ORC        => Type::OR,
-        State::NOTC       => Type::NOT, 
-        State::AA         => Type::LIT, // the on-the-way states to AND          
-        State::AN         => Type::LIT, // the on-the-way states to AND 
-        State::OO         => Type::LIT, // the on-the-way states to OR 
-        State::NN         => Type::LIT, // the on-the-way states to NOT 
-        State::NO         => Type::LIT, // the on-the-way states to NOT 
-        State::LIT        => Type::LIT,
+        State::LPAREN => Type::LPAREN,
+        State::RPAREN => Type::RPAREN,
+        State::AND => Type::AND,
+        State::OR => Type::OR,
+        State::NOT => Type::NOT,
+        State::ANDC => Type::AND,
+        State::ORC => Type::OR,
+        State::NOTC => Type::NOT,
+        State::AA => Type::LIT, // the on-the-way states to AND
+        State::AN => Type::LIT, // the on-the-way states to AND
+        State::OO => Type::LIT, // the on-the-way states to OR
+        State::NN => Type::LIT, // the on-the-way states to NOT
+        State::NO => Type::LIT, // the on-the-way states to NOT
+        State::LIT => Type::LIT,
         State::WHITESPACE => Type::WHITESPACE,
-        _                 => Type::FAIL,
+        _ => Type::FAIL,
     }
 }
 
 // thank u CS UWATERLOO CS241 COURSE NOTES
-fn simpl_max_munch( tokens: &mut Vec<Token>, 
-        trans_vec: &Vec<Transition>, 
-        accept_states: &Vec<State>,
-        input: &String) {
+fn simpl_max_munch(
+    tokens: &mut Vec<Token>,
+    trans_vec: &Vec<Transition>,
+    accept_states: &Vec<State>,
+    input: &String,
+) {
     let mut s: State = State::START;
     let mut t: String = String::new();
     let mut iter = input.chars();
@@ -101,7 +103,7 @@ fn simpl_max_munch( tokens: &mut Vec<Token>,
                 if delta(trans_vec, &s, &c) == State::FAIL {
                     if accept_states.contains(&s) {
                         // accept add token.
-                        tokens.push( Token(t, to_type(&s)) );
+                        tokens.push(Token(t, to_type(&s)));
                     } else {
                         t.push(c);
                         panic!("Scan failed on input '{}'", t);
@@ -114,18 +116,20 @@ fn simpl_max_munch( tokens: &mut Vec<Token>,
                     iter_c = iter.next();
                 }
             }
-            None => { break; },
+            None => {
+                break;
+            }
         }
     }
     // leftover characters.
     if accept_states.contains(&s) {
         // accept add token.
-        tokens.push( Token(t, to_type(&s)) );
+        tokens.push(Token(t, to_type(&s)));
     }
 }
 
 pub fn scan(input: &String) -> Vec<Token> {
-    let accept: Vec<State> = vec![ 
+    let accept: Vec<State> = vec![
         State::LPAREN,
         State::RPAREN,
         State::AA,
@@ -140,7 +144,7 @@ pub fn scan(input: &String) -> Vec<Token> {
         State::NOT,
         State::NOTC,
         State::WHITESPACE,
-        State::LIT
+        State::LIT,
     ];
 
     let mut trans_vec: Vec<Transition> = vec![
@@ -153,37 +157,47 @@ pub fn scan(input: &String) -> Vec<Token> {
         Transition(State::START, CharIn('!'), State::NOTC),
         // AND
         Transition(State::START, CharIn('a'), State::AA),
-        Transition(State::AA,    CharIn('n'), State::AN),
-        Transition(State::AN,    CharIn('d'), State::AND),
+        Transition(State::AA, CharIn('n'), State::AN),
+        Transition(State::AN, CharIn('d'), State::AND),
         // NOT
         Transition(State::START, CharIn('n'), State::NN),
-        Transition(State::NN,    CharIn('o'), State::NO),
-        Transition(State::NO,    CharIn('t'), State::NOT),
+        Transition(State::NN, CharIn('o'), State::NO),
+        Transition(State::NO, CharIn('t'), State::NOT),
         // OR
         Transition(State::START, CharIn('o'), State::OO),
-        Transition(State::OO,    CharIn('r'), State::OR),
+        Transition(State::OO, CharIn('r'), State::OR),
         // whitespace
-        Transition(State::START, PredIn(Box::new(|x| x.is_whitespace())), State::WHITESPACE),
-        Transition(State::WHITESPACE, PredIn(Box::new(|x| x.is_whitespace())), State::WHITESPACE)
+        Transition(
+            State::START,
+            PredIn(Box::new(|x| x.is_whitespace())),
+            State::WHITESPACE,
+        ),
+        Transition(
+            State::WHITESPACE,
+            PredIn(Box::new(|x| x.is_whitespace())),
+            State::WHITESPACE,
+        ),
     ];
 
     let to_lit: Vec<State> = vec![
-        State::START, 
-        State::AA, 
-        State::AN, 
-        State::AND, 
-        State::NN, 
+        State::START,
+        State::AA,
+        State::AN,
+        State::AND,
+        State::NN,
         State::NO,
         State::NOT,
         State::OO,
         State::OR,
-        State::LIT
+        State::LIT,
     ];
 
     for item in to_lit.iter() {
-        trans_vec.push(
-            Transition(*item, PredIn(Box::new(|x| x.is_alphanumeric())), State::LIT)
-        );
+        trans_vec.push(Transition(
+            *item,
+            PredIn(Box::new(|x| x.is_alphanumeric())),
+            State::LIT,
+        ));
     }
 
     // let temp: String = String::new();
@@ -192,10 +206,11 @@ pub fn scan(input: &String) -> Vec<Token> {
 
     simpl_max_munch(&mut temp_vec, &trans_vec, &accept, &input);
 
-    let fin: Vec<Token> = temp_vec.into_iter()
-                                  .filter(|Token(_,tok_type)| *tok_type != Type::WHITESPACE)
-                                  .collect();
-    // return the vector! 
+    let fin: Vec<Token> = temp_vec
+        .into_iter()
+        .filter(|Token(_, tok_type)| *tok_type != Type::WHITESPACE)
+        .collect();
+    // return the vector!
 
     fin
 }
